@@ -11,6 +11,7 @@ for filename in filenames:
     for line in thememap:
         rule = line.strip().split("=")
         rulelist.append([rule[1],rule[0]])
+        print(rule[0], rule[1] + "\n")
 
     for line in src:
         strippedline = line.strip()
@@ -32,9 +33,9 @@ for filename in filenames:
                         color = srcrule[1]
                         srcrules.append([rulename,color])
 
-    srcrules.append(["whatever", "ff00ffff"])
+    srcrules.append(["whatever", "ff00ffff\n"])
 
     for themerule in srcrules:
         for maprule in rulelist:
-            if maprule[1] == themerule[0]:
-                themesrc.write(maprule[0]+"=#"+themerule[1]+"\n")
+            if maprule[0] == themerule[0]:
+                themesrc.write(maprule[1]+"=#"+themerule[1]+"\n")
