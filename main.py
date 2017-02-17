@@ -33,7 +33,7 @@ for filename in filenames:
                         color = srcrule[1]
                         srcrules.append([rulename,color])
 
-    srcrules.append(["whatever", "ff00ffff\n"])
+    srcrules.append(["whatever", "ff00ffff"])
 
     for themerule in srcrules:
         for maprule in rulelist:
