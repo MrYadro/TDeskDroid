@@ -11,7 +11,6 @@ for filename in filenames:
     for line in thememap:
         rule = line.strip().split("=")
         rulelist.append([rule[1],rule[0]])
-        print(rule[0], rule[1] + "\n")
 
     for line in src:
         strippedline = line.strip()
