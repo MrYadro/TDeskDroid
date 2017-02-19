@@ -7,6 +7,8 @@ for filename in filenames:
 
     rulelist = []
     srcrules = []
+    bg = False
+    bgColor = ""
 
     for line in thememap:
         rule = line.strip().split("=")
@@ -19,20 +21,26 @@ for filename in filenames:
         else:
             rule = strippedline.split(":")
             rulename = rule[0].strip()
+            if rulename == "convChatBackgroundColor":
+                bg = True
             potcolor = rule[1].split("//")[0].strip()
             if potcolor.startswith("#"):
                 if len(potcolor[1:-1]) == 8:
                     color = potcolor[1:-1]
                 else:
                     color = potcolor[1:-1] + "ff"
-                srcrules.append([rulename,color])
             else :
                 for srcrule in srcrules:
                     if srcrule[0] == potcolor[:-1]:
                         color = srcrule[1]
-                        srcrules.append([rulename,color])
+            if bg == False and rulename == "windowBgOver":
+                bgColor = color
+            srcrules.append([rulename,color])
 
     srcrules.append(["whatever", "ff00ffff"])
+    srcrules.append(["findme", "00ffffff"])
+    if bg == False:
+        srcrules.append(["convChatBackgroundColor", bgColor])
 
     for themerule in srcrules:
         for maprule in rulelist:
