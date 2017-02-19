@@ -1,4 +1,4 @@
-filenames = ["arc", "arc_darker", "arc_dark", "colors"]
+filenames = ["colors"]
 
 for filename in filenames:
     src = open(filename + ".tdesktop-theme", "r")
