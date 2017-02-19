@@ -1,6 +1,7 @@
 from PIL import Image
 import os
 import zipfile
+import os.path
 
 def convertFromSignedHex(s):
     x = int(s,16)
@@ -8,36 +9,52 @@ def convertFromSignedHex(s):
         x -= 0x100000000
     return x
 
-def getbgcolor(path):
-    filenames = ["background", "tiled"]
+def getBgColor(path):
+    filename = "tiled"
     filetypes = ["jpg", "png"]
     size = 1,1
     tries = 0
 
-    for filename in filenames:
-        for filetype in filetypes:
-            try:
-                im = Image.open(path + "/" + filename + "." + filetype)
-            except FileNotFoundError:
-                tries += 1
-                pass
+    for filetype in filetypes:
+        try:
+            im = Image.open("./wip/" + path + "/" + filename + "." + filetype)
+        except FileNotFoundError:
+            tries += 1
+            pass
 
-    if tries == 4:
+    if tries == 2:
         return "ff00ff"
 
     rgb_im = im.convert('RGB')
-    im.thumbnail(size, Image.ANTIALIAS)
+    im.resize(size, Image.ANTIALIAS)
     r, g, b = rgb_im.getpixel((1, 1))
     return '{:02x}{:02x}{:02x}'.format(r, g, b)
 
-def makeAtthemeSrc(filename):
-    src = open(filename + "/colors.tdesktop-theme", "r")
+def convertBackround(path):
+    filename = "background"
+    filetypes = ["jpg", "png"]
+    tries = 0
+
+    for filetype in filetypes:
+        try:
+            im = Image.open("./wip/" + path + "/" + filename + "." + filetype)
+        except FileNotFoundError:
+            tries += 1
+            pass
+
+    if tries == 2:
+        return False
+
+    im.save("./wip/" + path + "/converted.jpg", "jpeg", quality=95)
+    return True
+
+def makeAtthemeSrc(filename, hasBg):
+    src = open("./wip/" + filename + "/colors.tdesktop-theme", "r")
     thememap = open("theme.map", "r")
-    themesrc = open("./tthemesrc/" + filename + ".atthemesrc", "w")
+    themesrc = open("./wip/tthemesrc/" + filename + ".atthemesrc", "w")
 
     rulelist = []
     srcrules = []
-    bg = False
     bgColor = ""
 
     for line in thememap:
@@ -51,9 +68,9 @@ def makeAtthemeSrc(filename):
         else:
             rule = strippedline.split(":")
             rulename = rule[0].strip()
-            if rulename == "convChatBackgroundColor":
-                bg = True
             potcolor = rule[1].split("//")[0].strip()
+            if rulename == "convChatBackgroundColor":
+                hasBg = True
             if potcolor.startswith("#"):
                 if len(potcolor[1:-1]) == 8:
                     color = potcolor[1:-1]
@@ -68,8 +85,8 @@ def makeAtthemeSrc(filename):
     srcrules.append(["whatever", "ff00ffff"])
     srcrules.append(["findme", "00ffffff"])
 
-    if bg == False:
-        srcrules.append(["convChatBackgroundColor", getbgcolor(filename)+"ff"])
+    if hasBg == False:
+        srcrules.append(["convChatBackgroundColor", getBgColor(filename)+"ff"])
 
     for themerule in srcrules:
         for maprule in rulelist:
@@ -80,8 +97,8 @@ def makeAtthemeSrc(filename):
     thememap.close()
     themesrc.close()
 
-def makeAttheme(filename):
-    src = open("./tthemesrc/" + filename + ".atthemesrc", "r")
+def makeAttheme(filename, hasBg):
+    src = open("./wip/tthemesrc/" + filename + ".atthemesrc", "r")
     theme = open("./ttheme/" + filename + ".attheme", "w")
 
     for line in src:
@@ -101,10 +118,20 @@ def makeAttheme(filename):
         i = convertFromSignedHex(swapedColor)
         theme.write(magicColor[0]+"="+str(i)+"\n")
 
+    if hasBg == True:
+        theme.write("WPS\n")
+        theme.close()
+        theme = open("./ttheme/" + filename + ".attheme", "ab")
+        img = open("./wip/" + filename + "/converted.jpg", "rb")
+        theme.write(img.read())
+        theme.close()
+        theme = open("./ttheme/" + filename + ".attheme", "a")
+        theme.write("\nWPE")
+
     src.close()
     theme.close()
 
-for directory in ["tthemesrc", "ttheme"]:
+for directory in ["wip", "wip/tthemesrc", "ttheme"]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -112,6 +139,7 @@ for file in os.listdir("./"):
     if file.endswith(".tdesktop-theme"):
         filename = file[:-15]
         with zipfile.ZipFile(file,"r") as zip_ref:
-            zip_ref.extractall(filename)
-            makeAtthemeSrc(filename)
-            makeAttheme(filename)
+            zip_ref.extractall("./wip/" + filename)
+            hasBg = convertBackround(filename)
+            makeAtthemeSrc(filename, hasBg)
+            makeAttheme(filename, hasBg)
