@@ -1,4 +1,23 @@
+from PIL import Image
+
 filenames = ["colors"]
+
+def getbgcolor():
+    filenames = ["background", "tiled"]
+    filetypes = ["png", "jpg"]
+    size = 1,1
+
+    for filename in filenames:
+        for filetype in filetypes:
+            try:
+                im = Image.open(filename + "." + filetype)
+            except FileNotFoundError:
+                pass
+
+    rgb_im = im.convert('RGB')
+    im.thumbnail(size, Image.ANTIALIAS)
+    r, g, b = rgb_im.getpixel((1, 1))
+    return '{:02x}{:02x}{:02x}'.format(r, g, b)
 
 for filename in filenames:
     src = open(filename + ".tdesktop-theme", "r")
@@ -33,14 +52,12 @@ for filename in filenames:
                 for srcrule in srcrules:
                     if srcrule[0] == potcolor[:-1]:
                         color = srcrule[1]
-            if bg == False and rulename == "windowBgOver":
-                bgColor = color
             srcrules.append([rulename,color])
 
     srcrules.append(["whatever", "ff00ffff"])
     srcrules.append(["findme", "00ffffff"])
     if bg == False:
-        srcrules.append(["convChatBackgroundColor", bgColor])
+        srcrules.append(["convChatBackgroundColor", getbgcolor()+"ff"])
 
     for themerule in srcrules:
         for maprule in rulelist:
