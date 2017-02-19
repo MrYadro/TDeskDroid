@@ -284,6 +284,7 @@ chat_secretTimeText=whatever
 chat_selectedBackground=msgInBgSelected
 chat_sentError=boxTextFgError
 chat_sentErrorIcon=historyReplyBg
+chat_serviceBackgroundSelected=msgServiceBgSelected
 chat_serviceBackground=msgServiceBg
 chat_serviceLink=msgServiceFg
 chat_serviceText=msgServiceFg
