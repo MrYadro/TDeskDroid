@@ -17,5 +17,5 @@
 ## About atthemes
 - Colors in `.attheme` file are signed int from `ARGB` (yep color alpha goes first)
 - Image has to be converted to `jpeg`, and put in binary mode into file between tags PWS and WPE
-- `.atthemesrc` is sort of source file made by me so you can check it in more human friendy how conversion goes
+- `.atthemesrc` is sort of source file made by me so you can check it in more human friendy way one how conversion goes
 - You have to use all the colors in `.tdesktop-theme` file
