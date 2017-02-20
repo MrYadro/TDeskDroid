@@ -51,7 +51,7 @@ def convertBackround(path):
 def makeAtthemeSrc(filename, hasBg):
     src = open("./wip/" + filename + "/colors.tdesktop-theme", "r")
     thememap = open("theme.map", "r")
-    themesrc = open("./wip/tthemesrc/" + filename + ".atthemesrc", "w")
+    themesrc = open("./wip/atthemesrc/" + filename + ".atthemesrc", "w")
 
     rulelist = []
     srcrules = []
@@ -98,8 +98,8 @@ def makeAtthemeSrc(filename, hasBg):
     themesrc.close()
 
 def makeAttheme(filename, hasBg):
-    src = open("./wip/tthemesrc/" + filename + ".atthemesrc", "r")
-    theme = open("./ttheme/" + filename + ".attheme", "w")
+    src = open("./wip/atthemesrc/" + filename + ".atthemesrc", "r")
+    theme = open("./attheme/" + filename + ".attheme", "w")
 
     for line in src:
         magicColor = line.strip().split("=")
@@ -121,17 +121,17 @@ def makeAttheme(filename, hasBg):
     if hasBg == True:
         theme.write("WPS\n")
         theme.close()
-        theme = open("./ttheme/" + filename + ".attheme", "ab")
+        theme = open("./attheme/" + filename + ".attheme", "ab")
         img = open("./wip/" + filename + "/converted.jpg", "rb")
         theme.write(img.read())
         theme.close()
-        theme = open("./ttheme/" + filename + ".attheme", "a")
+        theme = open("./attheme/" + filename + ".attheme", "a")
         theme.write("\nWPE")
 
     src.close()
     theme.close()
 
-for directory in ["wip", "wip/tthemesrc", "ttheme"]:
+for directory in ["wip", "wip/atthemesrc", "attheme"]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -139,6 +139,7 @@ for file in os.listdir("./"):
     if file.endswith(".tdesktop-theme"):
         filename = file[:-15]
         with zipfile.ZipFile(file,"r") as zip_ref:
+            print ("Converting " + filename)
             zip_ref.extractall("./wip/" + filename)
             hasBg = convertBackround(filename)
             makeAtthemeSrc(filename, hasBg)
