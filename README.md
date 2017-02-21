@@ -3,7 +3,7 @@
 ## Dependencies
 - python 3
 - pip3 (pip for python 3)
-- pillow
+- pillow (follow Installation instructions)
 
 ## Installation
 1. Install python 3 for your OS
