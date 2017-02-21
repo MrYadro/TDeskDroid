@@ -27,7 +27,7 @@ def getBgColor(path):
 
     rgb_im = im.convert('RGB')
     im.resize(size, Image.ANTIALIAS)
-    r, g, b = rgb_im.getpixel((1, 1))
+    r, g, b = rgb_im.getpixel((0, 0))
     return '{:02x}{:02x}{:02x}'.format(r, g, b)
 
 def convertBackround(path):
