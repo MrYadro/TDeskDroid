@@ -103,7 +103,7 @@ def makeAttheme(filename, hasBg):
 
     for line in src:
         magicColor = line.strip().split("=")
-        if magicColor[0] == "switchTrack" or magicColor[0] == "switchTrackChecked":
+        if magicColor[0] == "switchTrack" or magicColor[0] == "switchTrackChecked" or magicColor[0] == "dialogLinkSelection":
             swapedColor = "88"+magicColor[1][1:7]
         elif magicColor[0] == "chat_selectedBackground":
             swapedColor = "66"+magicColor[1][1:7]
@@ -113,6 +113,8 @@ def makeAttheme(filename, hasBg):
             swapedColor = "41"+magicColor[1][1:7]
         elif magicColor[0] == "chats_menuPhone" or magicColor[0] == "chats_menuPhoneCats":
             swapedColor = "99"+magicColor[1][1:7]
+        elif magicColor[0] == "chats_tabletSelectedOverlay":
+            swapedColor = "77"+magicColor[1][1:7]
         else:
             swapedColor = magicColor[1][-2:]+magicColor[1][1:7]
         i = convertFromSignedHex(swapedColor)
