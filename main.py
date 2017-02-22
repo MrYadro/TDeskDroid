@@ -103,7 +103,7 @@ def makeAttheme(filename, hasBg):
 
     for line in src:
         magicColor = line.strip().split("=")
-        if magicColor[0] == "switchTrack" or magicColor[0] == "switchTrackChecked" or magicColor[0] == "dialogLinkSelection":
+        if magicColor[0] == "switchTrack" or magicColor[0] == "switchTrackChecked" or magicColor[0] == "dialogLinkSelection" or magicColor[0] == "picker_disabledButton":
             swapedColor = "88"+magicColor[1][1:7]
         elif magicColor[0] == "chat_selectedBackground":
             swapedColor = "66"+magicColor[1][1:7]
@@ -146,3 +146,8 @@ for file in os.listdir("./"):
             hasBg = convertBackround(filename)
             makeAtthemeSrc(filename, hasBg)
             makeAttheme(filename, hasBg)
+
+print ("""Convetring done.\n
+If you have any bugs feel free to contact me:
+https://t.me/TDeskDroid
+https://github.com/MrYadro/TDeskDroid/issues/new""")
