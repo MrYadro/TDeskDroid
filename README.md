@@ -14,7 +14,7 @@
 ## Converting
 1. Put `.tdesktop-theme` file (the one is zip file) to same directory as main.py
 2. If you want to optimize your jpeg you have to get your api key here https://tinypng.com/developers put it in `tinify.key` and change `tinyJpeg` to True
-3. If you need to override some theme colors (if that's a bug please report it) you can use `override.map` e.g. `windowBackgroundWhite=#ffffffff` one rule per line
+3. If you need to override some theme colors (if that's a bug please report it) you can use `%themefilename%.override.map` e.g. `windowBackgroundWhite=#ffffffff` one rule per line
 4. Run `python3 main.py` via command prompt / terminal / whatever
 5. Go to directory attheme, and send `.attheme` file to TG chat, then apply it
 

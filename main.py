@@ -55,8 +55,9 @@ def convertBackround(path, tinyJpeg):
 def makeAtthemeSrc(filename, hasBg):
     src = open("./wip/" + filename + "/colors.tdesktop-theme", "r")
     thememap = open("theme.map", "r")
-    overridemap = open("override.map", "r")
     themesrc = open("./wip/atthemesrc/" + filename + ".atthemesrc", "w")
+    open(filename + ".override.map", 'a').close()
+    overridemap = open(filename + ".override.map", "r")
 
     rulelist = []
     srcrules = []
@@ -110,6 +111,7 @@ def makeAtthemeSrc(filename, hasBg):
 
     src.close()
     thememap.close()
+    overridemap.close()
     themesrc.close()
 
 def makeAttheme(filename, hasBg):
