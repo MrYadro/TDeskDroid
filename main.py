@@ -128,7 +128,7 @@ def makeAttheme(filename, hasBg):
         theme.write("WPS\n")
         theme.close()
         theme = open("./attheme/" + filename + ".attheme", "ab")
-        img = open("./wip/" + filename + "/optimised.jpg", "rb")
+        img = open("./wip/" + filename + "/converted.jpg", "rb")
         theme.write(img.read())
         theme.close()
         theme = open("./attheme/" + filename + ".attheme", "a")
