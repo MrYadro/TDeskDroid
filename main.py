@@ -155,7 +155,7 @@ for file in os.listdir("./"):
             makeAtthemeSrc(filename, hasBg)
             makeAttheme(filename, hasBg)
 
-print ("""Convetring done.\n
+print ("""Converting done.\n
 If you have any bugs feel free to contact me:
 https://t.me/TDeskDroid
 https://github.com/MrYadro/TDeskDroid/issues/new""")
