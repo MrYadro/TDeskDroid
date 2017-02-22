@@ -2,6 +2,7 @@ from PIL import Image
 import os
 import zipfile
 import os.path
+import tinify
 
 def convertFromSignedHex(s):
     x = int(s,16)
@@ -30,7 +31,7 @@ def getBgColor(path):
     r, g, b = rgb_im.getpixel((0, 0))
     return '{:02x}{:02x}{:02x}'.format(r, g, b)
 
-def convertBackround(path):
+def convertBackround(path, tinyJpeg):
     filename = "background"
     filetypes = ["jpg", "png"]
     tries = 0
@@ -45,7 +46,10 @@ def convertBackround(path):
     if tries == 2:
         return False
 
-    im.save("./wip/" + path + "/converted.jpg", "jpeg", quality=95)
+    im.save("./wip/" + path + "/converted.jpg", "jpeg", quality=100)
+    if tinyJpeg:
+        source = tinify.from_file("./wip/" + path + "/converted.jpg")
+        source.to_file("./wip/" + path + "/converted.jpg")
     return True
 
 def makeAtthemeSrc(filename, hasBg):
@@ -124,7 +128,7 @@ def makeAttheme(filename, hasBg):
         theme.write("WPS\n")
         theme.close()
         theme = open("./attheme/" + filename + ".attheme", "ab")
-        img = open("./wip/" + filename + "/converted.jpg", "rb")
+        img = open("./wip/" + filename + "/optimised.jpg", "rb")
         theme.write(img.read())
         theme.close()
         theme = open("./attheme/" + filename + ".attheme", "a")
@@ -132,6 +136,10 @@ def makeAttheme(filename, hasBg):
 
     src.close()
     theme.close()
+
+tinify.key = "API_KEY_HERE"
+
+tinyJpeg = False
 
 for directory in ["wip", "wip/atthemesrc", "attheme"]:
     if not os.path.exists(directory):
@@ -143,7 +151,7 @@ for file in os.listdir("./"):
         with zipfile.ZipFile(file,"r") as zip_ref:
             print ("Converting " + filename)
             zip_ref.extractall("./wip/" + filename)
-            hasBg = convertBackround(filename)
+            hasBg = convertBackround(filename, tinyJpeg)
             makeAtthemeSrc(filename, hasBg)
             makeAttheme(filename, hasBg)
 
