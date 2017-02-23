@@ -29,7 +29,7 @@ def getBgColor(path):
     rgb_im = im.convert('RGB')
     im.resize(size, Image.ANTIALIAS)
     r, g, b = rgb_im.getpixel((0, 0))
-    return '{:02x}{:02x}{:02x}'.format(r, g, b)
+    return '#{:02x}{:02x}{:02x}ff'.format(r, g, b)
 
 def convertBackround(path, tinyJpeg):
     filename = "background"
@@ -52,67 +52,70 @@ def convertBackround(path, tinyJpeg):
         source.to_file("./wip/" + path + "/converted.jpg")
     return True
 
+def readOverrideMap(overrideMapPath):
+    overrideDict = {}
+    if not os.path.exists(overrideMapPath):
+        return overrideDict
+    print("Applying '{}' override map".format(overrideMapPath))
+    with open(overrideMapPath, "r") as overrideMap:
+        for line in overrideMap:
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            overrideDict[key] = value
+    return overrideDict
+
 def makeAtthemeSrc(filename, hasBg):
-    src = open("./wip/" + filename + "/colors.tdesktop-theme", "r")
-    thememap = open("theme.map", "r")
-    themesrc = open("./wip/atthemesrc/" + filename + ".atthemesrc", "w")
-    open(filename + ".override.map", 'a').close()
-    overridemap = open(filename + ".override.map", "r")
+    with open("./wip/" + filename + "/colors.tdesktop-theme", "r") as src:
+        with open("theme.map", "r") as thememap:
+            with open("./wip/atthemesrc/" + filename + ".atthemesrc", "w") as themesrc:
+                # read original theme file
+                srcrules = {}
+                for line in src:
+                    strippedline = line.strip()
+                    if strippedline.startswith("/") or strippedline.startswith("*") or len(strippedline) < 1:
+                        continue
+                    key, value = strippedline.split(":", 1)
+                    key = key.strip()
+                    value = value.split(";")[0].strip()
+                    if key == "convChatBackgroundColor":
+                        hasBg = True
+                    if value.startswith("#") and len(value) < 9:
+                        value += "ff"
+                    srcrules[key] = value
 
-    rulelist = []
-    srcrules = []
-    overridelist = []
-    bgColor = ""
+                # add default values and fixups
+                srcrules["whatever"] = "#ff00ffff"
+                srcrules["findme"] = "#00ffffff"
+                if hasBg == False:
+                    srcrules["convChatBackgroundColor"] = getBgColor(filename)
 
-    for line in thememap:
-        rule = line.strip().split("=")
-        rulelist.append([rule[0],rule[1]])
+                # substitute color values
+                for rule, color in srcrules.items():
+                    if color.startswith("#"):
+                        continue
+                    srcrules[rule] = srcrules[color]
 
-    for line in overridemap:
-        rule = line.strip().split("=")
-        overridelist.append([rule[0],rule[1][1:]])
+                # parse theme.map
+                destrules = dict()
+                for line in thememap:
+                    droid, desk = line.strip().split("=")
+                    try:
+                        destrules[droid] = srcrules[desk].lower()
+                    except KeyError:
+                        print("Warning: couldn't find '{}' value. Using white color for '{}'.".format(desk, droid))
+                        destrules[droid] = "#ffffffff"
 
-    for line in src:
-        strippedline = line.strip()
-        if strippedline.startswith("/") or strippedline.startswith("*") or len(strippedline) < 1:
-            pass
-        else:
-            rule = strippedline.split(":")
-            rulename = rule[0].strip()
-            potcolor = rule[1].split("//")[0].strip()
-            if rulename == "convChatBackgroundColor":
-                hasBg = True
-            if potcolor.startswith("#"):
-                if len(potcolor[1:-1]) == 8:
-                    color = potcolor[1:-1]
-                else:
-                    color = potcolor[1:-1] + "ff"
-            else :
-                for srcrule in srcrules:
-                    if srcrule[0] == potcolor[:-1]:
-                        color = srcrule[1]
-            srcrules.append([rulename,color])
+                # apply overrides from map files
+                overrideMapPath = os.path.dirname(filename)
+                for filepart in os.path.basename(filename).split("."):
+                    overrideMapPath += filepart + "."
+                    overrideMap = readOverrideMap(overrideMapPath + "map")
+                    destrules.update(overrideMap)
 
-    srcrules.append(["whatever", "ff00ffff"])
-    srcrules.append(["findme", "00ffffff"])
-
-    if hasBg == False:
-        srcrules.append(["convChatBackgroundColor", getBgColor(filename)+"ff"])
-
-    for themerule in srcrules:
-        for maprule in rulelist:
-            override = False
-            for overriderule in overridelist:
-                if maprule[1] == themerule[0] and maprule[0] == overriderule[0]:
-                    themesrc.write(maprule[0]+"=#"+overriderule[1]+"\n")
-                    override = True
-            if maprule[1] == themerule[0] and not override:
-                themesrc.write(maprule[0]+"=#"+themerule[1]+"\n")
-
-    src.close()
-    thememap.close()
-    overridemap.close()
-    themesrc.close()
+                # write theme file
+                for rule, color in destrules.items():
+                    themesrc.write(rule + "=" + color + "\n")
 
 def makeAttheme(filename, hasBg):
     src = open("./wip/atthemesrc/" + filename + ".atthemesrc", "r")
