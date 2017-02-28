@@ -82,7 +82,7 @@ def substituteColor(rules_dict, color):
     if color.startswith("#"):
         if len(color) < 9:
             color += "ff"
-        return color
+        return color.lower()
     return substituteColor(rules_dict, rules_dict[color])
 
 def makeAtthemeSrc(filedir, filename, hasBg):
@@ -115,11 +115,11 @@ def makeAtthemeSrc(filedir, filename, hasBg):
                 # parse theme.map
                 destrules = dict()
                 for line in thememap:
-                    droid, desk = line.strip().split("=")
+                    droid, color = line.strip().split("=")
                     try:
-                        destrules[droid] = srcrules[desk].lower()
+                        destrules[droid] = substituteColor(srcrules, color)
                     except KeyError:
-                        print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(desk, droid))
+                        print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, droid))
 
                 # apply overrides from map files
                 overrideMapPath = filedir + os.path.sep
