@@ -4,6 +4,18 @@ import zipfile
 import os.path
 import tinify
 
+DESKTOP_DIR      = 'desktop'
+ANDROID_DIR      = 'android'
+WIP_DIR          = 'wip'
+WIP_DROIDSRC_DIR = os.path.join(WIP_DIR, 'atthemesrc')
+DESKTOP_EXT      = '.tdesktop-theme'
+ANDROID_EXT      = '.attheme'
+JPEG_NAME        = 'converted.jpg'
+
+for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
 def convertFromSignedHex(s):
     x = int(s,16)
     if x > 0x7FFFFFFF:
@@ -18,7 +30,7 @@ def getBgColor(path):
 
     for filetype in filetypes:
         try:
-            im = Image.open("./wip/" + path + "/" + filename + "." + filetype)
+            im = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
         except FileNotFoundError:
             tries += 1
             pass
@@ -46,10 +58,11 @@ def convertBackround(path, tinyJpeg):
     if tries == 2:
         return False
 
-    im.save("./wip/" + path + "/converted.jpg", "jpeg", quality=100)
+    jpg_path = os.path.join(WIP_DIR, path, JPEG_NAME)
+    im.save(jpg_path, "jpeg", quality=100)
     if tinyJpeg:
-        source = tinify.from_file("./wip/" + path + "/converted.jpg")
-        source.to_file("./wip/" + path + "/converted.jpg")
+        source = tinify.from_file(jpg_path)
+        source.to_file(jpg_path)
     return True
 
 def readOverrideMap(overrideMapPath):
@@ -65,10 +78,17 @@ def readOverrideMap(overrideMapPath):
             overrideDict[key] = value
     return overrideDict
 
-def makeAtthemeSrc(filename, hasBg):
-    with open("./wip/" + filename + "/colors.tdesktop-theme", "r") as src:
+def substituteColor(rules_dict, color):
+    if color.startswith("#"):
+        if len(color) < 9:
+            color += "ff"
+        return color.lower()
+    return substituteColor(rules_dict, rules_dict[color])
+
+def makeAtthemeSrc(filedir, filename, hasBg):
+    with open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r") as src:
         with open("theme.map", "r") as thememap:
-            with open("./wip/atthemesrc/" + filename + ".atthemesrc", "w") as themesrc:
+            with open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "w") as themesrc:
                 # read original theme file
                 srcrules = {}
                 for line in src:
@@ -80,8 +100,6 @@ def makeAtthemeSrc(filename, hasBg):
                     value = value.split(";")[0].strip()
                     if key == "convChatBackgroundColor":
                         hasBg = True
-                    if value.startswith("#") and len(value) < 9:
-                        value += "ff"
                     srcrules[key] = value
 
                 # add default values and fixups
@@ -92,34 +110,35 @@ def makeAtthemeSrc(filename, hasBg):
 
                 # substitute color values
                 for rule, color in srcrules.items():
-                    if color.startswith("#"):
-                        continue
-                    srcrules[rule] = srcrules[color]
+                    srcrules[rule] = substituteColor(srcrules, color)
 
                 # parse theme.map
                 destrules = dict()
                 for line in thememap:
-                    droid, desk = line.strip().split("=")
+                    droid, color = line.strip().split("=")
                     try:
-                        destrules[droid] = srcrules[desk].lower()
+                        destrules[droid] = substituteColor(srcrules, color)
                     except KeyError:
-                        print("Warning: couldn't find '{}' value. Using white color for '{}'.".format(desk, droid))
-                        destrules[droid] = "#ffffffff"
+                        print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, droid))
 
                 # apply overrides from map files
-                overrideMapPath = os.path.dirname(filename)
+                overrideMapPath = filedir + os.path.sep
                 for filepart in os.path.basename(filename).split("."):
                     overrideMapPath += filepart + "."
                     overrideMap = readOverrideMap(overrideMapPath + "map")
                     destrules.update(overrideMap)
+
+                # substitute color values for overrides
+                for rule, color in destrules.items():
+                    destrules[rule] = substituteColor(destrules, color)
 
                 # write theme file
                 for rule, color in destrules.items():
                     themesrc.write(rule + "=" + color + "\n")
 
 def makeAttheme(filename, hasBg):
-    src = open("./wip/atthemesrc/" + filename + ".atthemesrc", "r")
-    theme = open("./attheme/" + filename + ".attheme", "w")
+    src = open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "r")
+    theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "w")
 
     for line in src:
         magicColor = line.strip().split("=")
@@ -143,12 +162,11 @@ def makeAttheme(filename, hasBg):
     if hasBg == True:
         theme.write("WPS\n")
         theme.close()
-        theme = open("./attheme/" + filename + ".attheme", "ab")
-        img = open("./wip/" + filename + "/converted.jpg", "rb")
+        theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "ab")
+        img = open(os.path.join(WIP_DIR, filename, JPEG_NAME), "rb")
         theme.write(img.read())
         theme.close()
-        theme = open("./attheme/" + filename + ".attheme", "a")
-        theme.write("\nWPE")
+        theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "a")
         theme.write("\nWPE")
 
     src.close()
@@ -158,18 +176,16 @@ tinify.key = "API_KEY_HERE"
 
 tinyJpeg = False
 
-for directory in ["wip", "wip/atthemesrc", "attheme"]:
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-for file in os.listdir("./"):
-    if file.endswith(".tdesktop-theme"):
-        filename = file[:-15]
-        with zipfile.ZipFile(file,"r") as zip_ref:
+filedir = DESKTOP_DIR
+for file in os.listdir(filedir):
+    if file.endswith(DESKTOP_EXT):
+        filepath = os.path.join(filedir, file)
+        filename = os.path.splitext(file)[0]
+        with zipfile.ZipFile(os.path.join(DESKTOP_DIR, file),"r") as zip_ref:
             print ("Converting " + filename)
-            zip_ref.extractall("./wip/" + filename)
+            zip_ref.extractall(os.path.join(WIP_DIR, filename))
             hasBg = convertBackround(filename, tinyJpeg)
-            makeAtthemeSrc(filename, hasBg)
+            makeAtthemeSrc(filedir, filename, hasBg)
             makeAttheme(filename, hasBg)
 
 print ("""Converting done.\n
