@@ -78,6 +78,13 @@ def readOverrideMap(overrideMapPath):
             overrideDict[key] = value
     return overrideDict
 
+def substituteColor(rules_dict, color):
+    if color.startswith("#"):
+        if len(color) < 9:
+            color += "ff"
+        return color
+    return substituteColor(rules_dict, rules_dict[color])
+
 def makeAtthemeSrc(filedir, filename, hasBg):
     with open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r") as src:
         with open("theme.map", "r") as thememap:
@@ -93,8 +100,6 @@ def makeAtthemeSrc(filedir, filename, hasBg):
                     value = value.split(";")[0].strip()
                     if key == "convChatBackgroundColor":
                         hasBg = True
-                    if value.startswith("#") and len(value) < 9:
-                        value += "ff"
                     srcrules[key] = value
 
                 # add default values and fixups
@@ -105,9 +110,7 @@ def makeAtthemeSrc(filedir, filename, hasBg):
 
                 # substitute color values
                 for rule, color in srcrules.items():
-                    if color.startswith("#"):
-                        continue
-                    srcrules[rule] = srcrules[color]
+                    srcrules[rule] = substituteColor(srcrules, color)
 
                 # parse theme.map
                 destrules = dict()
@@ -116,15 +119,18 @@ def makeAtthemeSrc(filedir, filename, hasBg):
                     try:
                         destrules[droid] = srcrules[desk].lower()
                     except KeyError:
-                        print("Warning: couldn't find '{}' value. Using white color for '{}'.".format(desk, droid))
-                        destrules[droid] = "#ffffffff"
+                        print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(desk, droid))
 
                 # apply overrides from map files
-                overrideMapPath = os.path.dirname(filename)
+                overrideMapPath = filedir + os.path.sep
                 for filepart in os.path.basename(filename).split("."):
                     overrideMapPath += filepart + "."
                     overrideMap = readOverrideMap(overrideMapPath + "map")
                     destrules.update(overrideMap)
+
+                # substitute color values for overrides
+                for rule, color in destrules.items():
+                    destrules[rule] = substituteColor(destrules, color)
 
                 # write theme file
                 for rule, color in destrules.items():
