@@ -25,22 +25,11 @@ def convertFromSignedHex(s):
         x -= 0x100000000
     return x
 
-def getBgColor(path):
-    filename = "tiled"
-    filetypes = ["jpg", "png"]
-    size = 1,1
-    tries = 0
 
 def checkDirectories():
     for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
         if not os.path.exists(directory):
             os.makedirs(directory)
-    for filetype in filetypes:
-        try:
-            im = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
-        except FileNotFoundError:
-            tries += 1
-            pass
 
 def updateThemesMap():
     print("Downloading '" + THEME_MAP_PATH + "'")
@@ -52,13 +41,6 @@ def updateThemesMap():
     with open(THEME_ALPHA_MAP_PATH, 'w') as themeAlphaMap:
         themeAlphaMap.write(themesMapContents.text)
 
-    if tries == 2:
-        return "ff00ff"
-
-    rgb_im = im.convert('RGB')
-    im.resize(size, Image.ANTIALIAS)
-    r, g, b = rgb_im.getpixel((0, 0))
-    return '#{:02x}{:02x}{:02x}ff'.format(r, g, b)
 
 def convertBackround(path, tinyJpeg):
     filename = "background"
@@ -97,6 +79,7 @@ def readOverrideMap(overrideMapPath):
             overrideDict[key] = value
     return overrideDict
 
+def makeAtthemeSrc(filedir, filename):
 def substituteColor(rules_dict, color):
     if color.startswith("#"):
         if len(color) < 9:
@@ -104,7 +87,6 @@ def substituteColor(rules_dict, color):
         return color.lower()
     return substituteColor(rules_dict, rules_dict[color])
 
-def makeAtthemeSrc(filedir, filename, hasBg):
     with open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r") as src:
         with open("theme.map", "r") as thememap:
             with open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "w") as themesrc:
@@ -117,15 +99,11 @@ def makeAtthemeSrc(filedir, filename, hasBg):
                     key, value = strippedline.split(":", 1)
                     key = key.strip()
                     value = value.split(";")[0].strip()
-                    if key == "convChatBackgroundColor":
-                        hasBg = True
                     srcrules[key] = value
 
                 # add default values and fixups
                 srcrules["whatever"] = "#ff00ffff"
                 srcrules["findme"] = "#00ffffff"
-                if hasBg == False:
-                    srcrules["convChatBackgroundColor"] = getBgColor(filename)
 
                 # substitute color values
                 for rule, color in srcrules.items():
@@ -204,7 +182,7 @@ for file in os.listdir(filedir):
             print ("Converting '" + filename + "'")
             zip_ref.extractall(os.path.join(WIP_DIR, filename))
             hasBg = convertBackround(filename, TINIFY_ENABLE)
-            makeAtthemeSrc(filedir, filename, hasBg)
+            makeAtthemeSrc(filedir, filename)
             makeAttheme(filename, hasBg)
 
 print ("""Converton done\n
