@@ -13,9 +13,6 @@ JPEG_NAME        = 'converted.jpg'
 TINIFY_KEY       = "API_KEY_HERE"
 TINIFY_ENABLE    = False
 
-for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
-    if not os.path.exists(directory):
-        os.makedirs(directory)
 
 def convertFromSignedHex(s):
     x = int(s,16)
@@ -29,6 +26,10 @@ def getBgColor(path):
     size = 1,1
     tries = 0
 
+def checkDirectories():
+    for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
     for filetype in filetypes:
         try:
             im = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
@@ -175,6 +176,8 @@ def makeAttheme(filename, hasBg):
     src.close()
     theme.close()
 
+
+checkDirectories()
 
 filedir = DESKTOP_DIR
 for file in os.listdir(filedir):
