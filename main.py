@@ -2,7 +2,6 @@ from PIL import Image
 import os
 import zipfile
 import os.path
-import tinify
 
 DESKTOP_DIR      = 'desktop'
 ANDROID_DIR      = 'android'
@@ -11,6 +10,8 @@ WIP_DROIDSRC_DIR = os.path.join(WIP_DIR, 'atthemesrc')
 DESKTOP_EXT      = '.tdesktop-theme'
 ANDROID_EXT      = '.attheme'
 JPEG_NAME        = 'converted.jpg'
+TINIFY_KEY       = "API_KEY_HERE"
+TINIFY_ENABLE    = False
 
 for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
     if not os.path.exists(directory):
@@ -61,6 +62,8 @@ def convertBackround(path, tinyJpeg):
     jpg_path = os.path.join(WIP_DIR, path, JPEG_NAME)
     im.save(jpg_path, "jpeg", quality=100)
     if tinyJpeg:
+        import tinify
+        tinify.key = TINIFY_KEY
         source = tinify.from_file(jpg_path)
         source.to_file(jpg_path)
     return True
@@ -172,9 +175,6 @@ def makeAttheme(filename, hasBg):
     src.close()
     theme.close()
 
-tinify.key = "API_KEY_HERE"
-
-tinyJpeg = False
 
 filedir = DESKTOP_DIR
 for file in os.listdir(filedir):
@@ -184,7 +184,7 @@ for file in os.listdir(filedir):
         with zipfile.ZipFile(os.path.join(DESKTOP_DIR, file),"r") as zip_ref:
             print ("Converting " + filename)
             zip_ref.extractall(os.path.join(WIP_DIR, filename))
-            hasBg = convertBackround(filename, tinyJpeg)
+            hasBg = convertBackround(filename, TINIFY_ENABLE)
             makeAtthemeSrc(filedir, filename, hasBg)
             makeAttheme(filename, hasBg)
 
