@@ -67,7 +67,7 @@ def convertBackround(path, tinyJpeg):
 
     for filetype in filetypes:
         try:
-            im = Image.open("./wip/" + path + "/" + filename + "." + filetype)
+            im = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
         except FileNotFoundError:
             tries += 1
             pass
@@ -201,13 +201,13 @@ for file in os.listdir(filedir):
         filepath = os.path.join(filedir, file)
         filename = os.path.splitext(file)[0]
         with zipfile.ZipFile(os.path.join(DESKTOP_DIR, file),"r") as zip_ref:
-            print ("Converting " + filename)
+            print ("Converting '" + filename + "'")
             zip_ref.extractall(os.path.join(WIP_DIR, filename))
             hasBg = convertBackround(filename, TINIFY_ENABLE)
             makeAtthemeSrc(filedir, filename, hasBg)
             makeAttheme(filename, hasBg)
 
-print ("""Converting done.\n
+print ("""Converton done\n
 If you have any bugs feel free to contact me:
 https://t.me/TDeskDroid
 https://github.com/MrYadro/TDeskDroid/issues/new""")
