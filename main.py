@@ -15,15 +15,10 @@ THEME_MAP_PATH   = 'theme.map'
 THEME_MAP_URL    = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android.map'
 THEME_ALPHA_MAP_PATH = 'theme_alpha.map'
 THEME_ALPHA_MAP_URL  = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android_trans.map'
+OVERRIDE_MAP_PATH= 'override.map'
 TINIFY_KEY       = "API_KEY_HERE"
 TINIFY_ENABLE    = False
 
-
-def convertFromSignedHex(s):
-    x = int(s,16)
-    if x > 0x7FFFFFFF:
-        x -= 0x100000000
-    return x
 
 
 def checkDirectories():
@@ -41,6 +36,11 @@ def updateThemesMap():
     with open(THEME_ALPHA_MAP_PATH, 'w') as themeAlphaMap:
         themeAlphaMap.write(themesMapContents.text)
 
+def hexToDec(s):
+    x = int(s, 16)
+    if x > 0x7FFFFFFF:
+        x -= 0x100000000
+    return str(x)
 
 def convertBackround(path, tinyJpeg):
     filename = "background"
@@ -66,109 +66,117 @@ def convertBackround(path, tinyJpeg):
         source.to_file(jpg_path)
     return True
 
-def readOverrideMap(overrideMapPath):
+def normalizeColor(color):
+    color = color.lower()
+    if len(color) < 9:
+        color += "ff"
+    return color
+
+def substituteColor(rulesDict, color):
+    if color.startswith("#"):
+        return normalizeColor(color)
+    return substituteColor(rulesDict, rulesDict[color])
+
+def validateKeyValue(line, divider='='):
+    return (
+        line
+        and len(line) > 0
+        and divider in line
+        and (
+            line[0].isalpha() or line[0] == '_'
+        )
+    )
+
+def getKeyValue(line, divider='=', spliter='//'):
+    key, value = line.split(divider, 1)
+    key = key.strip()
+    value = value.split(spliter, 1)[0].strip()
+    return key, value
+
+def applyOverrideMap(overrideMapPath):
     overrideDict = {}
     if not os.path.exists(overrideMapPath):
         return overrideDict
     print("Applying '{}' override map".format(overrideMapPath))
     with open(overrideMapPath, "r") as overrideMap:
         for line in overrideMap:
-            key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip()
-            overrideDict[key] = value
+            if not validateKeyValue(line):
+                continue
+            name, color = getKeyValue(line)
+            if color.startswith("#"):
+                color = normalizeColor(color)
+            overrideDict[name] = color
     return overrideDict
 
 def makeAtthemeSrc(filedir, filename):
-def substituteColor(rules_dict, color):
-    if color.startswith("#"):
-        if len(color) < 9:
-            color += "ff"
-        return color.lower()
-    return substituteColor(rules_dict, rules_dict[color])
+    src = open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r").readlines()
+    themeMap = open(THEME_MAP_PATH, "r").readlines()
+    themeAlphaMap = open(THEME_ALPHA_MAP_PATH, "r").readlines()
 
-    with open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r") as src:
-        with open("theme.map", "r") as thememap:
-            with open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "w") as themesrc:
-                # read original theme file
-                srcrules = {}
-                for line in src:
-                    strippedline = line.strip()
-                    if strippedline.startswith("/") or strippedline.startswith("*") or len(strippedline) < 1:
-                        continue
-                    key, value = strippedline.split(":", 1)
-                    key = key.strip()
-                    value = value.split(";")[0].strip()
-                    srcrules[key] = value
+    # read original theme file
+    srcrules = {}
+    for line in src:
+        if not validateKeyValue(line, ':'):
+            continue
+        name, color = getKeyValue(line, ':', ';')
+        srcrules[name] = color
 
-                # add default values and fixups
-                srcrules["whatever"] = "#ff00ffff"
-                srcrules["findme"] = "#00ffffff"
+    overrideMap = applyOverrideMap(OVERRIDE_MAP_PATH)
+    srcrules.update(overrideMap)
 
-                # substitute color values
-                for rule, color in srcrules.items():
-                    srcrules[rule] = substituteColor(srcrules, color)
+    # substitute color values
+    for rule, color in srcrules.items():
+        srcrules[rule] = substituteColor(srcrules, color)
 
-                # parse theme.map
-                destrules = dict()
-                for line in thememap:
-                    droid, color = line.strip().split("=")
-                    try:
-                        destrules[droid] = substituteColor(srcrules, color)
-                    except KeyError:
-                        print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, droid))
+    # parse theme.map
+    destrules = dict()
+    for line in themeMap:
+        if not validateKeyValue(line):
+            continue
+        name, color = getKeyValue(line)
+        try:
+            destrules[name] = substituteColor(srcrules, color)
+        except KeyError:
+            print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, name))
 
-                # apply overrides from map files
-                overrideMapPath = filedir + os.path.sep
-                for filepart in os.path.basename(filename).split("."):
-                    overrideMapPath += filepart + "."
-                    overrideMap = readOverrideMap(overrideMapPath + "map")
-                    destrules.update(overrideMap)
+    for line in themeAlphaMap:
+        if not validateKeyValue(line):
+            continue
+        name, alpha = getKeyValue(line)
+        color = destrules[name]
+        destrules[name] = color[:7] + alpha
 
-                # substitute color values for overrides
-                for rule, color in destrules.items():
-                    destrules[rule] = substituteColor(destrules, color)
+    # apply overrides from map files
+    destrules.update(overrideMap)
+    overrideMapPath = filedir + os.path.sep
+    for filepart in os.path.basename(filename).split("."):
+        overrideMapPath += filepart + "."
+        overrideMap = applyOverrideMap(overrideMapPath + "map")
+        destrules.update(overrideMap)
 
-                # write theme file
-                for rule, color in destrules.items():
-                    themesrc.write(rule + "=" + color + "\n")
+    # substitute color values for overrides
+    for rule, color in destrules.items():
+        destrules[rule] = substituteColor(destrules, color)
+
+    # write theme file
+    with open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "w") as themesrc:
+        for rule, color in destrules.items():
+            themesrc.write(rule + "=" + color + "\n")
 
 def makeAttheme(filename, hasBg):
-    src = open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "r")
-    theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "w")
+    src = open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "r").readlines()
+    with open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "wb") as theme:
+        for line in src:
+            name, color = line.strip().split("=")
+            swappedColor = color[-2:] + color[1:7]
+            swappedColorDec = hexToDec(swappedColor)
+            theme.write((name + "=" + swappedColorDec + "\n").encode())
 
-    for line in src:
-        magicColor = line.strip().split("=")
-        if magicColor[0] == "switchTrack" or magicColor[0] == "switchTrackChecked" or magicColor[0] == "dialogLinkSelection" or magicColor[0] == "picker_disabledButton":
-            swapedColor = "88"+magicColor[1][1:7]
-        elif magicColor[0] == "chat_selectedBackground":
-            swapedColor = "66"+magicColor[1][1:7]
-        elif magicColor[0] == "chat_messagePanelVoiceShadow":
-            swapedColor = "D0"+magicColor[1][1:7]
-        elif magicColor[0] == "contextProgressInner1" or magicColor[0] == "contextProgressInner2":
-            swapedColor = "41"+magicColor[1][1:7]
-        elif magicColor[0] == "chats_menuPhone" or magicColor[0] == "chats_menuPhoneCats":
-            swapedColor = "99"+magicColor[1][1:7]
-        elif magicColor[0] == "chats_tabletSelectedOverlay":
-            swapedColor = "77"+magicColor[1][1:7]
-        else:
-            swapedColor = magicColor[1][-2:]+magicColor[1][1:7]
-        i = convertFromSignedHex(swapedColor)
-        theme.write(magicColor[0]+"="+str(i)+"\n")
-
-    if hasBg == True:
-        theme.write("WPS\n")
-        theme.close()
-        theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "ab")
-        img = open(os.path.join(WIP_DIR, filename, JPEG_NAME), "rb")
-        theme.write(img.read())
-        theme.close()
-        theme = open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "a")
-        theme.write("\nWPE")
-
-    src.close()
-    theme.close()
-
+        if hasBg:
+            theme.write("WPS\n".encode())
+            img = open(os.path.join(WIP_DIR, filename, JPEG_NAME), "rb")
+            theme.write(img.read())
+            theme.write("\nWPE".encode())
 
 checkDirectories()
 updateThemesMap()
