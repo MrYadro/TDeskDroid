@@ -5,6 +5,7 @@
 - tinify
 - pip3 (pip for python 3)
 - pillow (follow Installation instructions)
+- requests
 
 ## Installation
 1. Install python 3 for your OS
