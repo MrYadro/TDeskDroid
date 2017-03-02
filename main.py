@@ -185,6 +185,13 @@ class TDeskDroid(object):
             for rule, color in destrules.items():
                 themesrc.write(rule + "=" + color + "\n")
 
+    def _generateCredits(self):
+        return (
+            "If you have any bugs feel free to contact:\n"
+            "https://t.me/TThemesHQ\n"
+            "https://github.com/MrYadro/TDeskDroid/issues/new\n"
+        )
+
     def _makeAttheme(self, filename, hasBg):
         src = open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "r").readlines()
         with open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "wb") as theme:
@@ -199,13 +206,6 @@ class TDeskDroid(object):
                 theme.write(img.read())
                 theme.write("\nWPE".encode())
 
-    def _printCredits(self):
-        print(
-            "If you have any bugs feel free to contact me:\n"
-            "https://t.me/TDeskDroid\n"
-            "https://github.com/MrYadro/TDeskDroid/issues/new\n"
-        )
-
     def convert(self):
         self._checkDirectories()
         self._updateThemesMap()
@@ -219,7 +219,8 @@ class TDeskDroid(object):
                     hasBg = self._convertBackround(filename, TINIFY_ENABLE)
                     self._makeAtthemeSrc(filedir, filename)
                     self._makeAttheme(filename, hasBg)
-        print("Converton done\n")
-        self._printCredits()
+        print ("> Converton done\n")
+        print ('-' * 30)
+        print (self._generateCredits())
 
 TDeskDroid().convert()
