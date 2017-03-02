@@ -16,6 +16,8 @@ THEME_MAP_PATH       = os.path.join(MAPS_DIR, 'theme.map')
 THEME_MAP_URL        = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android.map'
 THEME_ALPHA_MAP_PATH = os.path.join(MAPS_DIR, 'theme_alpha.map')
 THEME_ALPHA_MAP_URL  = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android_trans.map'
+THEME_DEFAULT_PATH   = os.path.join(MAPS_DIR, 'default.map')
+THEME_DEFAULT_URL    = 'https://raw.githubusercontent.com/telegramdesktop/tdesktop/dev/Telegram/Resources/colors.palette'
 OVERRIDE_MAP_PATH    = os.path.join(MAPS_DIR, 'override.map')
 TINIFY_KEY           = "API_KEY_HERE"
 TINIFY_ENABLE        = False
@@ -28,14 +30,18 @@ def checkDirectories():
             os.makedirs(directory)
 
 def updateThemesMap():
-    print("Downloading '" + THEME_MAP_PATH + "'")
+    print("Downloading [desktop => android] mapping")
     themesMapContents = requests.get(THEME_MAP_URL)
     with open(THEME_MAP_PATH, 'w') as themeMap:
         themeMap.write(themesMapContents.text)
-    print("Downloading '" + THEME_ALPHA_MAP_PATH + "'")
+    print("Downloading transparency fixups")
     themesMapContents = requests.get(THEME_ALPHA_MAP_URL)
-    with open(THEME_ALPHA_MAP_PATH, 'w') as themeAlphaMap:
-        themeAlphaMap.write(themesMapContents.text)
+    with open(THEME_ALPHA_MAP_PATH, 'w') as themeMap:
+        themeMap.write(themesMapContents.text)
+    print("Downloading default desktop theme")
+    themesMapContents = requests.get(THEME_DEFAULT_URL)
+    with open(THEME_DEFAULT_PATH, 'w') as themeMap:
+        themeMap.write(themesMapContents.text)
 
 def convertBackround(path, tinyJpeg):
     filename = "background"
@@ -103,6 +109,22 @@ def applyOverrideMap(overrideMapPath):
             overrideDict[name] = color
     return overrideDict
 
+defaultThemeMap = None
+def getDefaultThemeMap():
+    global defaultThemeMap
+    if defaultThemeMap is None:
+        defaultThemeMap = {}
+        themeDefault = open(THEME_DEFAULT_PATH, "r").readlines()
+        for line in themeDefault:
+            if not validateKeyValue(line, ':'):
+                continue
+            name, color = getKeyValue(line, ':', ';')
+            defaultThemeMap[name] = color
+    return defaultThemeMap
+
+def getDefaultColor(name):
+    return getDefaultThemeMap()[name]
+
 def makeAtthemeSrc(filedir, filename):
     src = open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r").readlines()
     themeMap = open(THEME_MAP_PATH, "r").readlines()
@@ -129,10 +151,12 @@ def makeAtthemeSrc(filedir, filename):
         if not validateKeyValue(line):
             continue
         name, color = getKeyValue(line)
-        try:
-            destrules[name] = substituteColor(srcrules, color)
-        except KeyError:
-            print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, name))
+        while True:
+            try:
+                destrules[name] = substituteColor(srcrules, color)
+                break
+            except KeyError:
+                color = getDefaultColor(color)
 
     for line in themeAlphaMap:
         if not validateKeyValue(line):
