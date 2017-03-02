@@ -24,7 +24,8 @@ TINIFY_ENABLE        = False
 
 
 class TDeskDroid(object):
-    _defaultThemeMap = None
+    def __init__(self):
+        self.__defaultThemeMap = None
 
     def _checkDirectories(self):
         for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
@@ -114,16 +115,16 @@ class TDeskDroid(object):
         return overrideDict
 
     @property
-    def defaultThemeMap(self):
-        if self._defaultThemeMap is None:
-            self._defaultThemeMap = {}
+    def _defaultThemeMap(self):
+        if self.__defaultThemeMap is None:
+            self.__defaultThemeMap = {}
             themeDefault = open(THEME_DEFAULT_PATH, "r").readlines()
             for line in themeDefault:
                 if not self._validateKeyValue(line, ':'):
                     continue
                 name, color = self._getKeyValue(line, ':', ';')
-                self._defaultThemeMap[name] = color
-        return self._defaultThemeMap
+                self.__defaultThemeMap[name] = color
+        return self.__defaultThemeMap
 
     def _makeAtthemeSrc(self, filedir, filename):
         src = open(os.path.join(WIP_DIR, filename, "colors.tdesktop-theme"), "r").readlines()
@@ -157,7 +158,7 @@ class TDeskDroid(object):
                     break
                 except KeyError:
                     try:
-                        color = self.defaultThemeMap[color]
+                        color = self._defaultThemeMap[color]
                     except KeyError:
                         print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, name))
 
