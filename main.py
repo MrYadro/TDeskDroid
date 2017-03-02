@@ -4,20 +4,20 @@ import zipfile
 import os.path
 import requests
 
-DESKTOP_DIR      = 'desktop'
-ANDROID_DIR      = 'android'
-WIP_DIR          = 'wip'
-WIP_DROIDSRC_DIR = os.path.join(WIP_DIR, 'atthemesrc')
-DESKTOP_EXT      = '.tdesktop-theme'
-ANDROID_EXT      = '.attheme'
-JPEG_NAME        = 'converted.jpg'
-THEME_MAP_PATH   = 'theme.map'
-THEME_MAP_URL    = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android.map'
+DESKTOP_DIR          = 'desktop'
+ANDROID_DIR          = 'android'
+WIP_DIR              = 'wip'
+WIP_DROIDSRC_DIR     = os.path.join(WIP_DIR, 'atthemesrc')
+DESKTOP_EXT          = '.tdesktop-theme'
+ANDROID_EXT          = '.attheme'
+JPEG_NAME            = 'converted.jpg'
+THEME_MAP_PATH       = 'theme.map'
+THEME_MAP_URL        = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android.map'
 THEME_ALPHA_MAP_PATH = 'theme_alpha.map'
 THEME_ALPHA_MAP_URL  = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android_trans.map'
-OVERRIDE_MAP_PATH= 'override.map'
-TINIFY_KEY       = "API_KEY_HERE"
-TINIFY_ENABLE    = False
+OVERRIDE_MAP_PATH    = 'override.map'
+TINIFY_KEY           = "API_KEY_HERE"
+TINIFY_ENABLE        = False
 
 
 
