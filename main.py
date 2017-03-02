@@ -45,25 +45,30 @@ class TDeskDroid(object):
         with open(THEME_DEFAULT_PATH, 'w') as themeMap:
             themeMap.write(themesMapContents.text)
 
+    def tinifyJpeg(self, jpegPath):
+        import tinify
+        tinify.key = TINIFY_KEY
+        source = tinify.from_file(jpegPath)
+        source.to_file(jpegPath)
+
     def _convertBackround(self, path, tinyJpeg):
         filename = "background"
         filetypes = ["jpg", "png"]
-        tries = 0
+        success = False
+        image = None
         for filetype in filetypes:
             try:
-                im = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
+                image = Image.open(os.path.join(WIP_DIR, path, filename + "." + filetype))
+                success = True
             except FileNotFoundError:
-                tries += 1
                 pass
-        if tries == 2:
+        if not success or not image:
+            print ('Warning: failed to convert background')
             return False
-        jpg_path = os.path.join(WIP_DIR, path, JPEG_NAME)
-        im.save(jpg_path, "jpeg", quality=100)
+        jpegPath = os.path.join(WIP_DIR, path, JPEG_NAME)
+        image.save(jpegPath, "jpeg", quality=100)
         if tinyJpeg:
-            import tinify
-            tinify.key = TINIFY_KEY
-            source = tinify.from_file(jpg_path)
-            source.to_file(jpg_path)
+            self.tinifyJpeg(jpegPath)
         return True
 
     def _normalizeColor(self, color):
@@ -97,7 +102,7 @@ class TDeskDroid(object):
         overrideDict = {}
         if not os.path.exists(overrideMapPath):
             return overrideDict
-        print("Applying '{}' override map".format(overrideMapPath))
+        print("Applying '{}' override map".format(os.path.basename(overrideMapPath)))
         with open(overrideMapPath, "r") as overrideMap:
             for line in overrideMap:
                 if not self._validateKeyValue(line):
@@ -141,7 +146,7 @@ class TDeskDroid(object):
             srcrules[rule] = self._substituteColor(srcrules, color)
 
         # parse theme.map
-        destrules = dict()
+        destrules = {}
         for line in themeMap:
             if not self._validateKeyValue(line):
                 continue
