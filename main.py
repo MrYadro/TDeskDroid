@@ -36,12 +36,6 @@ def updateThemesMap():
     with open(THEME_ALPHA_MAP_PATH, 'w') as themeAlphaMap:
         themeAlphaMap.write(themesMapContents.text)
 
-def hexToDec(s):
-    x = int(s, 16)
-    if x > 0x7FFFFFFF:
-        x -= 0x100000000
-    return str(x)
-
 def convertBackround(path, tinyJpeg):
     filename = "background"
     filetypes = ["jpg", "png"]
@@ -169,8 +163,7 @@ def makeAttheme(filename, hasBg):
         for line in src:
             name, color = line.strip().split("=")
             swappedColor = color[-2:] + color[1:7]
-            swappedColorDec = hexToDec(swappedColor)
-            theme.write((name + "=" + swappedColorDec + "\n").encode())
+            theme.write((name + "=#" + swappedColor + "\n").encode())
 
         if hasBg:
             theme.write("WPS\n".encode())
