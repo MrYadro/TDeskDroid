@@ -4,6 +4,8 @@ import zipfile
 import os.path
 import requests
 
+APP_NAME             = 'TDeskDroid'
+APP_VERSION          = '1.0.0'
 DESKTOP_DIR          = 'desktop'
 ANDROID_DIR          = 'android'
 WIP_DIR              = 'wip'
@@ -16,8 +18,10 @@ THEME_MAP_PATH       = os.path.join(MAPS_DIR, 'theme.map')
 THEME_MAP_URL        = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android.map'
 THEME_ALPHA_MAP_PATH = os.path.join(MAPS_DIR, 'theme_alpha.map')
 THEME_ALPHA_MAP_URL  = 'https://raw.githubusercontent.com/TThemes/TThemeMap/master/desktop_android_trans.map'
+THEME_MAP_COMMIT_URL = 'https://api.github.com/repos/TThemes/TThemeMap/commits/master'
 THEME_DEFAULT_PATH   = os.path.join(MAPS_DIR, 'default.map')
 THEME_DEFAULT_URL    = 'https://raw.githubusercontent.com/telegramdesktop/tdesktop/master/Telegram/Resources/colors.palette'
+THEME_DEFAULT_COMMIT_URL = 'https://api.github.com/repos/telegramdesktop/tdesktop/commits/master'
 OVERRIDE_MAP_PATH    = os.path.join(MAPS_DIR, 'override.map')
 TINIFY_KEY           = 'API_KEY_HERE'
 TINIFY_ENABLE        = False
@@ -26,22 +30,32 @@ TINIFY_ENABLE        = False
 class TDeskDroid(object):
     def __init__(self):
         self.__defaultThemeMap = None
+        self._themeMapCommit = None
+        self._themeAlphaMapCommit = None
+        self._defaultThemeMapCommit = None
+        self._currentThemeFilename = None
 
     def _checkDirectories(self):
         for directory in [DESKTOP_DIR, ANDROID_DIR, WIP_DIR, WIP_DROIDSRC_DIR]:
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
+    def _getCommitId(self, url):
+        return requests.get(url).json()['sha']
+
     def _updateThemesMap(self):
         print("Downloading [desktop => android] mapping")
+        self._themeMapCommit = self._getCommitId(THEME_MAP_COMMIT_URL)
         themesMapContents = requests.get(THEME_MAP_URL)
         with open(THEME_MAP_PATH, 'w') as themeMap:
             themeMap.write(themesMapContents.text)
         print("Downloading transparency fixups")
+        self._themeAlphaMapCommit = self._themeMapCommit
         themesMapContents = requests.get(THEME_ALPHA_MAP_URL)
         with open(THEME_ALPHA_MAP_PATH, 'w') as themeMap:
             themeMap.write(themesMapContents.text)
         print("Downloading default desktop theme")
+        self._defaultThemeMapCommit = self._getCommitId(THEME_DEFAULT_COMMIT_URL)
         themesMapContents = requests.get(THEME_DEFAULT_URL)
         with open(THEME_DEFAULT_PATH, 'w') as themeMap:
             themeMap.write(themesMapContents.text)
@@ -193,9 +207,35 @@ class TDeskDroid(object):
             "https://github.com/MrYadro/TDeskDroid/issues/new\n"
         )
 
+    def _generateThemeHeader(self):
+        header = []
+        def addLn(msg=''):
+            header.append('// ' + msg)
+        def addKeyValue(key, value):
+            addLn("%15s : '%s'" % (key, value))
+        DELIMITER = '/' * 40
+        addLn(DELIMITER)
+        addLn()
+        addLn("This Telegram android-theme was converted from desktop-theme using %s utility." % APP_NAME)
+        addLn()
+        addLn("Convertion parameters:")
+        addKeyValue(APP_NAME, APP_VERSION)
+        addKeyValue("Desktop theme", self._currentThemeFilename)
+        addKeyValue(os.path.basename(THEME_MAP_PATH), self._themeMapCommit)
+        addKeyValue(os.path.basename(THEME_ALPHA_MAP_PATH), self._themeAlphaMapCommit)
+        addKeyValue(os.path.basename(THEME_DEFAULT_PATH), self._defaultThemeMapCommit)
+        addLn()
+        for line in self._generateCredits().splitlines():
+            addLn(line)
+        addLn()
+        addLn(DELIMITER)
+        header = '\n'.join(header) + '\n\n'
+        return header
+
     def _makeAttheme(self, filename, hasBg):
         src = open(os.path.join(WIP_DROIDSRC_DIR, filename + ".atthemesrc"), "r").readlines()
         with open(os.path.join(ANDROID_DIR, filename + ANDROID_EXT), "wb") as theme:
+            theme.write(self._generateThemeHeader().encode())
             for line in src:
                 name, color = line.strip().split("=")
                 swappedColor = color[-2:] + color[1:7]
@@ -213,6 +253,7 @@ class TDeskDroid(object):
         filedir = DESKTOP_DIR
         for file in os.listdir(filedir):
             if file.endswith(DESKTOP_EXT):
+                self._currentThemeFilename = file
                 filename = os.path.splitext(file)[0]
                 with zipfile.ZipFile(os.path.join(DESKTOP_DIR, file),"r") as zip_ref:
                     print ("> Converting '" + filename + "'")
