@@ -156,7 +156,10 @@ def makeAtthemeSrc(filedir, filename):
                 destrules[name] = substituteColor(srcrules, color)
                 break
             except KeyError:
-                color = getDefaultColor(color)
+                try:
+                    color = getDefaultColor(color)
+                except KeyError:
+                    print("Warning: couldn't find '{}' value. Using default color for '{}'.".format(color, name))
 
     for line in themeAlphaMap:
         if not validateKeyValue(line):
