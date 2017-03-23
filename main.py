@@ -95,7 +95,11 @@ class TDeskDroid(object):
     def _substituteColor(self, rulesDict, color):
         if color.startswith("#"):
             return self._normalizeColor(color)
-        return self._substituteColor(rulesDict, rulesDict[color])
+        try:
+            outcolor = self._substituteColor(rulesDict, rulesDict[color])
+        except KeyError:
+            outcolor = self._normalizeColor("#ff00ff")
+        return outcolor
 
     def _validateKeyValue(self, line, divider='='):
         return (
