@@ -41,7 +41,7 @@ class TDeskDroid(object):
                 os.makedirs(directory)
 
     def _getCommitId(self, url):
-        return requests.get(url).json()['sha']
+        return requests.get(url).json().get('sha')
 
     def _updateThemesMap(self):
         print("Downloading [desktop => android] mapping")
