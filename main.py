@@ -265,7 +265,7 @@ class TDeskDroid(object):
                     hasBg = self._convertBackround(filename, TINIFY_ENABLE)
                     self._makeAtthemeSrc(filedir, filename)
                     self._makeAttheme(filename, hasBg)
-        print ("> Converton done\n")
+        print ("> Convertion done\n")
         print ('-' * 30)
         print (self._generateCredits())
 
